@@ -273,7 +273,9 @@ class LTDecoder(object):
         self.filesize = 0
         self.blocksize = 0
         self.done = False
+
         self.compressed = False
+        self.base64encoded = False
 
         self.block_graph = None
         self.prng = None
@@ -287,6 +289,9 @@ class LTDecoder(object):
 
         if magic_byte & 0x01:
             self.compressed = True
+
+        if magic_byte & 0x02:
+            self.base64encoded = True
 
         # first time around, init things
         if not self.initialized:
@@ -303,7 +308,7 @@ class LTDecoder(object):
 
         # If BP is done, stop
         self.done = self._handle_block(src_blocks, block)
-        return self.done, self.compressed
+        return self.done, self.compressed, self.base64encoded
 
     def decode_bytes(self, block_bytes):
         header = unpack('!BIII', block_bytes[:13])
@@ -336,10 +341,18 @@ class LTDecoder(object):
         return self.block_graph.add_block(src_blocks, block)
 
 
-def optimal_encoding(f, block_size, extra=0, compression=None, **kwargs):
-    # Generate 32 different encodings and test to see how well they do in decoding
-    # Then return the one that took the least number of blocks on average to decode
-    # Also make sure that small enough files get enough blocks to successfully decode
+def encode_and_compress(f, block_size, extra=0, compression=None, **kwargs):
+    """
+    Tests decoding 64 times to get an idea of how many blocks it takes to decode
+    Also possibly compress data to be decoded.
+
+    :param f: File object of data to be read off of
+    :param block_size: Size of individual blocks
+    :param extra: Extra blocks to generate (usually choose 5-10)
+    :param compression: None for automatic compression, True or False to manually enable it.
+    :param kwargs: Extra arguments for the encoder.
+    :return: A list of blocks, a float scoring the decoder efficiency, and a bool of whether the data was compressed
+    """
 
     input_data = f.read()
 
@@ -389,7 +402,7 @@ if __name__ == '__main__':
     block_size = 512
     input_data = bytes([randint(0, 255) for _ in range(40000)])
 
-    data, score, compressed = optimal_encoding(io.BytesIO(input_data), block_size, len(input_data))
+    data, score, compressed = encode_and_compress(io.BytesIO(input_data), block_size, len(input_data))
 
     print('Optimized data encoding!')
 

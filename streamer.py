@@ -28,9 +28,14 @@ def main():
                         default=sys.stdin.buffer, help='The filename or path of file to stream. '
                                                        'Default is stdin.')
 
+    textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7f})
+    binary_file = lambda bytes: bool(bytes.translate(None, textchars))
+
     args = parser.parse_args()
 
     input_data = args.infile.read()
+
+    args.infile.close()
 
     running_extra = int(args.extra)
 
@@ -38,23 +43,27 @@ def main():
 
     while True:
         try:
-            data, score, compressed = fountaincoding.optimal_encoding(io.BytesIO(input_data), args.block_size,
-                                                                  extra=floor(running_extra))
+            data, score, compressed = fountaincoding.encode_and_compress(io.BytesIO(input_data), args.block_size,
+                                                                            extra=floor(running_extra))
             break
-        except Exception:
+        except:
             running_extra += 1
             print('Increasing extra QR codes so decoding is possible...')
 
+    # Get current path so we can make the directory and stick our images and gif in there.
     current_path = os.getcwd()
 
     timestamp = str(round(time.time()))
 
-    os.mkdir(os.path.join(current_path, timestamp))
+    filename = timestamp + '_' + re.sub(r'[^\w._-]+', '', args.infile.name)
+
+    os.mkdir(os.path.join(current_path, filename))
 
     images = []
 
     print('Generating QR codes...')
 
+    # Generate a bunch of QR codes.
     for i, block in enumerate(data):
         qr = qrcode.QRCode(version=None,
                            error_correction={
@@ -65,21 +74,28 @@ def main():
                            }.get(args.error, 1),
                            box_size=8,
                            border=10)
+        # QR codes can't have arbitrary binary data, so we need to Base64 encode each block.
         qr.add_data(base64.b64encode(block))
+
+        # Fit the QR codes. They should all be the same size.
         qr.make(fit=True)
 
+        # Make the images and add them to our list of images so we can construct the
         img = qr.make_image(fill_color='black', back_color='white')
         images.append(img)
-        img.save(os.path.join(current_path, timestamp, '%s_%s.png' % (i, timestamp)))
+        img.save(os.path.join(current_path, filename, '%s_%s.png' % (i, filename)))
 
-    with open(os.path.join(current_path, timestamp, re.sub(r'[^\w.]+', '', args.infile.name)), 'wb') as f:
+    # Make a single copy of our file in the directory so we can tell it apart.
+    with open(os.path.join(current_path, filename, filename), 'wb') as f:
         f.write(input_data)
-    args.infile.close()
 
+    # Convert to RGBA because of a weird problem with dithering
     images = [j.convert('RGBA') for j in images]
 
-    images[0].save(os.path.join(current_path, timestamp, re.sub(r'[^\w.]+', '', args.infile.name) + '.gif'), format='GIF', save_all=True, append_images=images[1:], duration=args.duration, loop=0)
+    # Syntax for saving as a gif: save the first image, and add the rest of the images as an append_image argument. Loop infinitely.
+    images[0].save(os.path.join(current_path, filename, filename + '.gif'), format='GIF', save_all=True, append_images=images[1:], duration=args.duration, loop=0)
 
+    # Tell us our info on how well we encoded it.
     optimal_blocks = ceil(len(input_data) / args.block_size)
 
     print('\nResults:\n-------------------------------')
