@@ -43,7 +43,7 @@ def main():
 
     while True:
         try:
-            data, score, compressed = fountaincoding.encode_and_compress(io.BytesIO(input_data), args.block_size,
+            data, score, compressed, compressed_data = fountaincoding.encode_and_compress(io.BytesIO(input_data), args.block_size,
                                                                             extra=floor(running_extra))
             break
         except:
@@ -101,6 +101,10 @@ def main():
     print('\nResults:\n-------------------------------')
     print('Generated %s images.' % len(images))
     print('Compressed data' if compressed else 'Did not compress data')
+    if compressed:
+        print('Compressed down to size of %s from size %s' % (len(compressed_data), len(input_data)))
+    if True:
+        print('Data: %s' % compressed_data.hex())
     print('Recommended minimum number of images to print/display/use: %0.0f\n(This is for redundancy)' % ceil(score + 5))
     print('Average number of images taken to decode in testing: %0.2f' % score)
     print('Overhead from encoding was: %0.2f%%' % ((score / optimal_blocks - 1) * 100))

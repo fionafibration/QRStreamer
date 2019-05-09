@@ -117,3 +117,4 @@ dmypy.json
 .idea/dictionaries.xml
 
 *_.gitignore/
+.idea/inspectionProfiles/Project_Default.xml

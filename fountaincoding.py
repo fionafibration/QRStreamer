@@ -151,6 +151,7 @@ class PRNG(object):
             if num not in nums:
                 nums.add(num)
                 have += 1
+
         return blockseed, d, nums
 
 
@@ -190,7 +191,7 @@ def encoder(f, blocksize, magic_byte, seed=None, c=DEFAULT_C, delta=DEFAULT_DELT
 
         # Generate blocks of XORed data in network byte order
         block = (magic_byte, filesize, blocksize, blockseed, int.to_bytes(block_data, blocksize, sys.byteorder))
-        yield pack('<BIII%ss' % blocksize, *block)
+        yield pack('!BIII%ss' % blocksize, *block)
 
 
 # Check node in graph
@@ -201,6 +202,8 @@ class CheckNode(object):
         self.check = check
         self.src_nodes = src_nodes
 
+    def __repr__(self):
+        return "CheckNode(%s)" % self.src_nodes
 
 class BlockGraph(object):
     """Graph on which we run Belief Propagation to resolve
@@ -217,7 +220,6 @@ class BlockGraph(object):
         source nodes it connects, resolving all message passes that
         become possible as a result.
         """
-
 
         # We can eliminate this source node
         if len(nodes) == 1:
@@ -252,6 +254,9 @@ class BlockGraph(object):
         """Resolves a source node, passing the message to all associated checks
         """
 
+        print(self.checks)
+        print(self.eliminated)
+
         # Cache resolved value
         self.eliminated[node] = data
         others = self.checks[node]
@@ -278,7 +283,6 @@ class LTDecoder(object):
         self.done = False
 
         self.compressed = False
-        self.base64encoded = False
 
         self.block_graph = None
         self.prng = None
@@ -287,14 +291,12 @@ class LTDecoder(object):
     def is_done(self):
         return self.done
 
+
     def consume_block(self, lt_block):
         (magic_byte, filesize, blocksize, blockseed), block = lt_block
 
         if magic_byte & 0x01:
             self.compressed = True
-
-        if magic_byte & 0x02:
-            self.base64encoded = True
 
         # first time around, init things
         if not self.initialized:
@@ -311,10 +313,10 @@ class LTDecoder(object):
 
         # If BP is done, stop
         self.done = self._handle_block(src_blocks, block)
-        return self.done, self.compressed, self.base64encoded
+        return self.done, self.compressed
 
     def decode_bytes(self, block_bytes):
-        header = unpack('<BIII', block_bytes[:13])
+        header = unpack('!BIII', block_bytes[:13])
         data = int.from_bytes(block_bytes[13:], 'big')
         return self.consume_block((header, data))
 
@@ -398,14 +400,14 @@ def encode_and_compress(f, block_size, extra=0, compression=None, **kwargs):
             num_blocks_fed += 1
         times_to_finish.append(num_blocks_fed)
 
-    return encoded_test_data, sum(times_to_finish) / len(times_to_finish), magic_byte & 0x01 > 0
+    return encoded_test_data, sum(times_to_finish) / len(times_to_finish), magic_byte & 0x01 > 0, processed
 
 
 if __name__ == '__main__':
     block_size = 512
     input_data = bytes([randint(0, 255) for _ in range(40000)])
 
-    data, score, compressed = encode_and_compress(io.BytesIO(input_data), block_size, len(input_data))
+    data, score, compressed, _ = encode_and_compress(io.BytesIO(input_data), block_size, len(input_data))
 
     print('Optimized data encoding!')
 
