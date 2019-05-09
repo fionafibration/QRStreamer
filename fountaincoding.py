@@ -165,7 +165,6 @@ def _split_file(data, blocksize):
 
 
 def encoder(f, blocksize, magic_byte, seed=None, c=DEFAULT_C, delta=DEFAULT_DELTA):
-
     """Generates an infinite sequence of blocks to transmit
     to the receiver
     """
@@ -196,7 +195,6 @@ def encoder(f, blocksize, magic_byte, seed=None, c=DEFAULT_C, delta=DEFAULT_DELT
 
 # Check node in graph
 class CheckNode(object):
-
     def __init__(self, src_nodes, check):
 
         self.check = check
@@ -254,9 +252,6 @@ class BlockGraph(object):
         """Resolves a source node, passing the message to all associated checks
         """
 
-        print(self.checks)
-        print(self.eliminated)
-
         # Cache resolved value
         self.eliminated[node] = data
         others = self.checks[node]
@@ -290,7 +285,6 @@ class LTDecoder(object):
 
     def is_done(self):
         return self.done
-
 
     def consume_block(self, lt_block):
         (magic_byte, filesize, blocksize, blockseed), block = lt_block
@@ -382,8 +376,9 @@ def encode_and_compress(f, block_size, extra=0, compression=None, **kwargs):
     enc = encoder(io.BytesIO(processed), block_size, magic_byte, **kwargs)
 
     encoded_test_data = [enc.__next__() for _ in range(ceil(len(processed) / block_size) + extra)]
-
+    
     times_to_finish = []
+    
     for i in range(64):
         dec = LTDecoder()
 
