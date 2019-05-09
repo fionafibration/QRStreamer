@@ -190,13 +190,14 @@ def encoder(f, blocksize, magic_byte, seed=None, c=DEFAULT_C, delta=DEFAULT_DELT
 
         # Generate blocks of XORed data in network byte order
         block = (magic_byte, filesize, blocksize, blockseed, int.to_bytes(block_data, blocksize, sys.byteorder))
-        yield pack('!BIII%ss' % blocksize, *block)
+        yield pack('<BIII%ss' % blocksize, *block)
 
 
 # Check node in graph
 class CheckNode(object):
 
     def __init__(self, src_nodes, check):
+
         self.check = check
         self.src_nodes = src_nodes
 
@@ -216,6 +217,7 @@ class BlockGraph(object):
         source nodes it connects, resolving all message passes that
         become possible as a result.
         """
+
 
         # We can eliminate this source node
         if len(nodes) == 1:
@@ -250,9 +252,12 @@ class BlockGraph(object):
         """Resolves a source node, passing the message to all associated checks
         """
 
+        print(self.checks)
+
         # Cache resolved value
         self.eliminated[node] = data
         others = self.checks[node]
+
         del self.checks[node]
 
         # Pass messages to all associated checks
@@ -311,7 +316,7 @@ class LTDecoder(object):
         return self.done, self.compressed, self.base64encoded
 
     def decode_bytes(self, block_bytes):
-        header = unpack('!BIII', block_bytes[:13])
+        header = unpack('<BIII', block_bytes[:13])
         data = int.from_bytes(block_bytes[13:], 'big')
         return self.consume_block((header, data))
 
