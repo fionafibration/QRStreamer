@@ -252,8 +252,6 @@ class BlockGraph(object):
         """Resolves a source node, passing the message to all associated checks
         """
 
-        print(self.checks)
-
         # Cache resolved value
         self.eliminated[node] = data
         others = self.checks[node]
