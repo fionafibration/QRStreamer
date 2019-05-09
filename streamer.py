@@ -103,8 +103,6 @@ def main():
     print('Compressed data' if compressed else 'Did not compress data')
     if compressed:
         print('Compressed down to size of %s from size %s' % (len(compressed_data), len(input_data)))
-    if True:
-        print('Data: %s' % compressed_data.hex())
     print('Recommended minimum number of images to print/display/use: %0.0f\n(This is for redundancy)' % ceil(score + 5))
     print('Average number of images taken to decode in testing: %0.2f' % score)
     print('Overhead from encoding was: %0.2f%%' % ((score / optimal_blocks - 1) * 100))
