@@ -1,3 +1,5 @@
+#! usr/bin/env python3
+
 import fountaincoding
 import argparse
 import sys
@@ -46,7 +48,9 @@ def main():
             data, score, compressed, compressed_data = fountaincoding.encode_and_compress(io.BytesIO(input_data), args.block_size,
                                                                             extra=floor(running_extra))
             break
-        except:
+        except Exception as e:
+            print(dir(qrstreamer))
+            raise e
             running_extra += 1
             print('Increasing extra QR codes so decoding is possible...')
 
