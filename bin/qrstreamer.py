@@ -3,6 +3,7 @@
 import fountaincoding
 import argparse
 import sys
+import subprocess
 import qrcode
 import time
 import os
@@ -11,6 +12,16 @@ import io
 import base64
 from math import ceil, floor
 from qrcode.constants import *
+
+
+def check_update():
+    outdated = subprocess.check_output([sys.executable, '-m', 'pip', 'list', '-o'])
+    for line in outdated.split('\n'):
+        if line.startswith('qrstreamer'):
+            print('\n')
+            _, current_version, latest_version, *_ = line.split('\n\t\r ')
+            print('QRStreamer requires an update!\nCurrent version: %s\n Latest Version: %s' % (current_version, latest_version))
+            print("Upgrade by running \'python -m pip install -U qrstreamer\', or 'pip install -U qrstreamer'")
 
 
 def main():
@@ -30,9 +41,6 @@ def main():
                         default=sys.stdin.buffer, help='The filename or path of file to stream. '
                                                        'Default is stdin.')
 
-    textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7f})
-    binary_file = lambda bytes: bool(bytes.translate(None, textchars))
-
     args = parser.parse_args()
 
     input_data = args.infile.read()
@@ -48,9 +56,7 @@ def main():
             data, score, compressed, compressed_data = fountaincoding.encode_and_compress(io.BytesIO(input_data), args.block_size,
                                                                             extra=floor(running_extra))
             break
-        except Exception as e:
-            print(dir(qrstreamer))
-            raise e
+        except:
             running_extra += 1
             print('Increasing extra QR codes so decoding is possible...')
 
@@ -110,6 +116,8 @@ def main():
     print('Recommended minimum number of images to print/display/use: %0.0f\n(This is for redundancy)' % ceil(score + 5))
     print('Average number of images taken to decode in testing: %0.2f' % score)
     print('Overhead from encoding was: %0.2f%%' % ((score / optimal_blocks - 1) * 100))
+
+    check_update()
 
 
 if __name__ == '__main__':
