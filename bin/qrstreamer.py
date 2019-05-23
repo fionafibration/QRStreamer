@@ -1,6 +1,7 @@
 #! usr/bin/env python3
 
 import fountaincoding
+import outdated
 import argparse
 import sys
 import subprocess
@@ -15,12 +16,11 @@ from qrcode.constants import *
 
 
 def check_update():
-    outdated = subprocess.check_output([sys.executable, '-m', 'pip', 'list', '-o'])
-    for line in outdated.split('\n'):
-        if line.startswith('qrstreamer'):
+    current_version = re.search(b'Version: ((\\d\\.)*\\d+)', subprocess.check_output([sys.executable, '-m', 'pip', 'show', 'qrstreamer']))[1].decode('utf-8')
+    is_outdated, latest_version = outdated.check_outdated('qrstreamer', current_version)
+    if is_outdated:
             print('\n')
-            _, current_version, latest_version, *_ = line.split('\n\t\r ')
-            print('QRStreamer requires an update!\nCurrent version: %s\n Latest Version: %s' % (current_version, latest_version))
+            print('QRStreamer requires an update!\nCurrent version: %s\nLatest Version: %s' % (current_version, latest_version))
             print("Upgrade by running \'python -m pip install -U qrstreamer\', or 'pip install -U qrstreamer'")
 
 

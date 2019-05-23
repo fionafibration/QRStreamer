@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="qrstreamer",
-    version="0.1.0",
+    version="0.1.2",
     author="Finian Blackett",
     author_email="spamsuckersunited@gmail.com",
     description="A module for streaming files into QR codes",
@@ -20,6 +20,7 @@ setuptools.setup(
     ),
     install_requires=[
         'qrcode',
+        'outdated'
     ],
     scripts=[
         'bin/qrstreamer.py'
